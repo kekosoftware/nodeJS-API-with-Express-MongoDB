@@ -1,0 +1,14 @@
+{
+  "name": "v39",
+  "version": "1.0.0",
+  "description": "Proyecto demo de NPM",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "color": "^4.0.1"
+  }
+}
