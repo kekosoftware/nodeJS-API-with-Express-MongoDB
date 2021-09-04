@@ -1,6 +1,8 @@
 const express = require('express');
+const bcrypt  = require('bcrypt')
 const Usuario = require('../models/usuario_model');
 const Joi     = require('joi');
+const { request } = require('express');
 const ruta    = express.Router();
 
 const schema = Joi.object({
@@ -30,6 +32,18 @@ ruta.get('/', (req, res) => {
 ruta.post('/', (req, res) => {
   let body = req.body
 
+  Usuario.findOne({
+    email: body.email
+  }, (err, user) => {
+    if(err){
+      return res.status(400).json({error: "Server Error"})
+    }
+    if(user){
+      // Usuer exist
+      return res.status(400).json({ msj: "El usuario ya existe."})
+    }
+  })
+
   const {error, value} = schema.validate({nombre: body.nombre, email: body.email})
 
   if(!error){
@@ -37,7 +51,8 @@ ruta.post('/', (req, res) => {
     
     resultado.then( user => {
       res.json({
-        valor: user
+        nombre: user.nombre,
+        email : user.email
       })
     }).catch( err => {
       res.status(400).json({
@@ -58,9 +73,10 @@ ruta.put('/:email', (req, res) => {
   
   if(!error){
     let resultado = actualizarUsuario(req.params.email, req.body)
-    resultado.then(valorP => {
+    resultado.then(valor => {
       res.json({
-        valor: valorP
+        nombre: valor.nombre,
+        email : valor.email
       })
     }).catch( err => {
       res.status(400).json({
@@ -78,7 +94,10 @@ ruta.put('/:email', (req, res) => {
 ruta.delete('/:email', (req, res) => {
   let resultado = desactivarUsuario(req.params.email)
   resultado.then( valor => {
-    res.json({ usuario: valor })
+    res.json({ 
+      nombre: valor.nombre,
+      email : valor.email
+  })
   }).catch(err => {
     res.status(400).json({
       error: err
@@ -88,7 +107,14 @@ ruta.delete('/:email', (req, res) => {
 
 
 async function listarUsuariosActivos(){
-  let usuarios = await Usuario.find({"estado": true})
+  let usuarios = await Usuario
+    .find({
+      "estado": true
+    })
+    .select({
+      nombre: 1, 
+      email: 1
+    })
   return usuarios;
 }
 
@@ -96,7 +122,7 @@ async function crearUsuario(body){
   let usuario = new Usuario({
       email       : body.email,
       nombre      : body.nombre,
-      password    : body.password
+      password    : bcrypt.hashSync(body.password, 10)
   });
   return await usuario.save();
 }
